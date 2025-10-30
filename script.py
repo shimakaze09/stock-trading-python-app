@@ -28,16 +28,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
-SAMPLE_TICKERS: List[Dict[str, Any]] = [
-    {
-        "ticker": "AAPL",
-        "name": "Apple Inc.",
-        "market": "stocks",
-        "locale": "us",
-        "primary_exchange": "XNAS",
-        "active": True,
-    }
-]
 
 
 def ensure_api_key(url: str, api_key: Optional[str]) -> str:
@@ -166,16 +156,10 @@ def cli() -> None:
     parser = argparse.ArgumentParser(description="Fetch Polygon tickers and write them to CSV")
     parser.add_argument("--output", "-o", default=os.path.join(os.path.dirname(__file__), "tickers.csv"), help="Output CSV path")
     parser.add_argument("--limit", "-l", type=int, default=1000, help="Page limit per request")
-    parser.add_argument("--use-sample", action="store_true", help="Write a small sample CSV without calling the API")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO, format="%(levelname)s: %(message)s")
-
-    if args.use_sample:
-        logging.info("Using sample tickers (no external API calls)")
-        write_tickers_to_csv(SAMPLE_TICKERS, args.output)
-        return
 
     if not POLYGON_API_KEY:
         logging.error("POLYGON_API_KEY is not set in the environment. Use --use-sample to generate a sample.")
