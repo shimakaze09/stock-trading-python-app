@@ -9,10 +9,18 @@ on:
     - cron: '0 16 * * 1-5'    # 4:00 PM EST (market close)
   workflow_dispatch:  # Allow manual triggering
 
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: stock-analysis-pipeline
+  cancel-in-progress: true
+
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -27,20 +35,22 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Initialize database
         env:
           DB_USER: ${{ secrets.DB_USER }}
@@ -50,7 +60,7 @@ jobs:
           DB_PORT: 5432
         run: |
           python scripts/init_db.py
-      
+
       - name: Seed stocks (if needed)
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
@@ -62,7 +72,7 @@ jobs:
         run: |
           python scripts/seed_stocks.py || echo "Stocks may already be seeded"
         continue-on-error: true
-      
+
       - name: Run pipeline
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
@@ -73,10 +83,10 @@ jobs:
           DB_PORT: 5432
         run: |
           python scripts/run_pipeline.py 100  # Process 100 stocks per run
-      
+
       - name: Upload exports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: analysis-exports
           path: exports/
