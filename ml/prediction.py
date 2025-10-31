@@ -112,8 +112,18 @@ class PredictionGenerator:
                 else:
                     has_file = os.path.exists(model_path + '.pkl')
                 if not has_file:
-                    print(f"Model file not found for {symbol} {model_type} {horizon}d, skipping prediction")
-                    continue
+                    # Try restore from DB registry
+                    from database.connection import get_db_context
+                    from ml.registry import restore_model_binary
+                    restored = False
+                    try:
+                        # Use current session from orchestrator context if possible
+                        restored = restore_model_binary(self.db, symbol, model_type, horizon, model_path)
+                    except Exception:
+                        pass
+                    if not restored:
+                        print(f"Model file not found for {symbol} {model_type} {horizon}d, skipping prediction")
+                        continue
 
                 # Load model
                 model.load(model_path)

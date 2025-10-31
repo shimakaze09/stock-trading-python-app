@@ -197,6 +197,19 @@ CREATE TABLE IF NOT EXISTS ingestion_state (
 CREATE INDEX IF NOT EXISTS idx_ingestion_state_next_run ON ingestion_state(next_run_at);
 CREATE INDEX IF NOT EXISTS idx_ingestion_state_priority ON ingestion_state(priority_score DESC);
 
+-- Model registry to persist trained models between runs
+CREATE TABLE IF NOT EXISTS model_registry (
+    id SERIAL PRIMARY KEY,
+    stock_id INTEGER REFERENCES stocks(id) ON DELETE CASCADE,
+    model_type VARCHAR(50) NOT NULL,
+    prediction_horizon INTEGER NOT NULL,
+    model_version VARCHAR(50),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pkl_data BYTEA,           -- for sklearn/arima
+    keras_data BYTEA,         -- for neural network
+    UNIQUE(stock_id, model_type, prediction_horizon)
+);
+
 -- Update timestamp function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

@@ -5,6 +5,7 @@ from sqlalchemy import (
     Date, DateTime, ForeignKey, UniqueConstraint, Index, Text
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -298,4 +299,22 @@ class IngestionState(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     stock = relationship('Stock')
+
+
+class ModelRegistry(Base):
+    """Persist trained model binaries in Postgres."""
+    __tablename__ = 'model_registry'
+
+    id = Column(Integer, primary_key=True)
+    stock_id = Column(Integer, ForeignKey('stocks.id', ondelete='CASCADE'), nullable=False, index=True)
+    model_type = Column(String(50), nullable=False)
+    prediction_horizon = Column(Integer, nullable=False)
+    model_version = Column(String(50))
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    pkl_data = Column(LargeBinary)
+    keras_data = Column(LargeBinary)
+
+    __table_args__ = (
+        UniqueConstraint('stock_id', 'model_type', 'prediction_horizon', name='uq_model_registry_key'),
+    )
 

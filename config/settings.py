@@ -21,11 +21,15 @@ class Settings:
     DB_NAME: str = os.getenv('DB_NAME', 'stockdb')
     DB_HOST: str = os.getenv('DB_HOST', 'localhost')
     DB_PORT: int = int(os.getenv('DB_PORT', '5432'))
+    DB_SSLMODE: str = os.getenv('DB_SSLMODE', '')  # e.g., 'require' for Supabase
     
     @property
     def DATABASE_URL(self) -> str:
         """Get SQLAlchemy database URL."""
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        base = f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        if self.DB_SSLMODE:
+            return f"{base}?sslmode={self.DB_SSLMODE}"
+        return base
     
     # Pipeline Configuration
     UPDATE_INTERVAL_MINUTES: int = int(os.getenv('UPDATE_INTERVAL_MINUTES', '30'))
