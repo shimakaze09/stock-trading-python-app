@@ -91,6 +91,7 @@ class PredictionGenerator:
         """Generate predictions for a specific model type."""
         predictions = {}
         
+        import os
         for horizon in horizons:
             try:
                 # Load model
@@ -105,11 +106,17 @@ class PredictionGenerator:
                 else:
                     continue
                 
-                try:
-                    model.load(model_path)
-                except Exception as e:
-                    print(f"Failed to load model {model_path}: {str(e)}")
+                # Skip if model file(s) do not exist
+                if model_type == 'neural_network':
+                    has_file = os.path.exists(model_path + '.keras') or os.path.exists(model_path + '.h5')
+                else:
+                    has_file = os.path.exists(model_path + '.pkl')
+                if not has_file:
+                    print(f"Model file not found for {symbol} {model_type} {horizon}d, skipping prediction")
                     continue
+
+                # Load model
+                model.load(model_path)
                 
                 # Make prediction
                 if model_type == 'arima':

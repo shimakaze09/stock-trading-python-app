@@ -163,16 +163,26 @@ class PipelineOrchestrator:
             result['fundamental_analysis'] = fundamental_analysis is not None
         
         # 4. Train ML Models
+        models_trained_count = 0
         if train_models and self.settings.ML_PREDICTIONS:
             print(f"  Training ML models for {symbol}...")
             training_results = self.model_trainer.train_models(symbol, retrain=False)
-            result['models_trained'] = len([r for r in training_results.values() if 'error' not in r])
+            # Count per model_type and horizon that trained successfully
+            for mt, details in training_results.items():
+                if isinstance(details, dict):
+                    for h, res in details.items():
+                        if isinstance(res, dict) and 'error' not in res:
+                            models_trained_count += 1
+            result['models_trained'] = models_trained_count
         
         # 5. Generate Predictions
-        if generate_predictions and self.settings.ML_PREDICTIONS:
+        if generate_predictions and self.settings.ML_PREDICTIONS and models_trained_count > 0:
             print(f"  Generating predictions for {symbol}...")
             predictions = self.prediction_generator.generate_predictions(symbol, save_to_db=True)
             result['predictions_generated'] = len(predictions)
+        elif generate_predictions and self.settings.ML_PREDICTIONS:
+            print(f"  Skipping predictions for {symbol}: no trained models available")
+            result['predictions_generated'] = 0
         
         # 6. Generate Report
         report = None
