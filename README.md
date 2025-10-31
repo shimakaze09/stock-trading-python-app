@@ -109,7 +109,7 @@ python -m pytest tests/test_config.py -v
 
 See `TEST_RESULTS.md` for detailed test results.
 
-**Note**: Database is configured to use port **5435** by default to avoid conflicts with existing PostgreSQL instances on ports 5432 and 5433.
+**Note**: Database is configured to use port **5432** by default.
 
 ## License
 

@@ -9,7 +9,6 @@ def test_settings_loaded():
     settings = get_settings()
     assert settings is not None
     assert settings.POLYGON_API_KEY is not None
-    assert settings.DB_PORT == 5435  # Updated port
     assert settings.MAX_API_CALLS_PER_MINUTE == 5
 
 

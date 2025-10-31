@@ -53,8 +53,8 @@ All tests have been run successfully on port 5435 (avoiding conflicts with exist
 ## Configuration
 
 ### Database Port
-- **Default Port**: 5435 (to avoid conflicts with other PostgreSQL instances)
-- **Docker Port Mapping**: 5435:5432
+- **Default Port**: 5432
+- **Docker Port Mapping**: 5432:5432
 
 ### Environment Variables
 - `.env` file created with:

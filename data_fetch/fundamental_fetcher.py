@@ -128,7 +128,24 @@ class FundamentalFetcher:
                 payload['liabilities'] = balance_sheet.get('liabilities')
                 payload['equity'] = balance_sheet.get('equity')
                 payload['cash'] = balance_sheet.get('cash_and_cash_equivalents_at_carrying_value')
-                payload['debt'] = balance_sheet.get('liabilities')
+                # Debt should reflect interest-bearing debt, not total liabilities
+                long_term_debt = (
+                    balance_sheet.get('long_term_debt_noncurrent') or
+                    balance_sheet.get('long_term_debt_and_capital_lease_obligations')
+                )
+                current_debt = (
+                    balance_sheet.get('long_term_debt_current') or
+                    balance_sheet.get('short_term_borrowings')
+                )
+                if long_term_debt is not None or current_debt is not None:
+                    try:
+                        ltd = float(long_term_debt or 0)
+                        cd = float(current_debt or 0)
+                        payload['debt'] = ltd + cd
+                    except Exception:
+                        payload['debt'] = None
+                else:
+                    payload['debt'] = None
                 
                 # Calculate ratios
                 if payload['liabilities'] and payload['equity']:

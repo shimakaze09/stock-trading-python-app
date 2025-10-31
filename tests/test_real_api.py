@@ -65,6 +65,7 @@ def test_price_fetcher_uses_real_api():
             # Need a stock first
             from database.models import Stock
             stock = db.query(Stock).filter(Stock.symbol == 'AAPL').first()
+            created_here = False
             if not stock:
                 # Create test stock
                 stock = Stock(
@@ -76,6 +77,7 @@ def test_price_fetcher_uses_real_api():
                 db.add(stock)
                 db.commit()
                 db.refresh(stock)
+                created_here = True
             
             price_fetcher = PriceFetcher(db)
             
@@ -84,10 +86,12 @@ def test_price_fetcher_uses_real_api():
             assert price_fetcher.client.api_key == settings.POLYGON_API_KEY, "Should use real API key"
             assert price_fetcher.client.BASE_URL == "https://api.polygon.io", "Should use real API URL"
             
-            # Clean up
-            if stock.id:  # Only if newly created
-                db.delete(stock)
-                db.commit()
+            if created_here:
+                # Re-fetch to ensure it's the same instance
+                s = db.query(Stock).filter(Stock.symbol == 'AAPL').first()
+                if s:
+                    db.delete(s)
+                    db.commit()
                 
     except Exception as e:
         pytest.skip(f"Test setup failed: {str(e)}")
