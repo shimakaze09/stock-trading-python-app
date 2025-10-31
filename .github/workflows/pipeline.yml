@@ -21,6 +21,14 @@ jobs:
   pipeline:
     runs-on: ubuntu-latest
 
+    env:
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_HOST: localhost
+      DB_PORT: 5432
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -31,7 +39,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -d ${{ secrets.DB_NAME }} -U ${{ secrets.DB_USER }}" 
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -51,38 +59,36 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Initialize database
-        env:
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_HOST: localhost
-          DB_PORT: 5432
+      - name: Ensure PYTHONPATH includes workspace
         run: |
-          python scripts/init_db.py
+          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Wait for Postgres to accept connections
+        run: |
+          echo "Waiting for Postgres at $DB_HOST:$DB_PORT..."
+          for i in {1..30}; do
+            if (echo > /dev/tcp/$DB_HOST/$DB_PORT) >/dev/null 2>&1; then
+              echo "Postgres is listening on $DB_HOST:$DB_PORT"
+              exit 0
+            fi
+            echo "Postgres not ready yet ($i/30). Sleeping 2s..."
+            sleep 2
+          done
+          echo "Timed out waiting for Postgres to be reachable at $DB_HOST:$DB_PORT"
+          exit 1
+
+      - name: Initialize database
+        run: |
+          python -m scripts.init_db
 
       - name: Seed stocks (if needed)
-        env:
-          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_HOST: localhost
-          DB_PORT: 5432
         run: |
-          python scripts/seed_stocks.py || echo "Stocks may already be seeded"
-        continue-on-error: true
+          set -o pipefail
+          python -m scripts.seed_stocks || (echo "Seed script exited non-zero; continuing job" && true)
 
       - name: Run pipeline
-        env:
-          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_HOST: localhost
-          DB_PORT: 5432
         run: |
-          python scripts/run_pipeline.py 100  # Process 100 stocks per run
+          python -m scripts.run_pipeline 100  # Process 100 stocks per run
 
       - name: Upload exports
         if: always()
