@@ -1,5 +1,9 @@
 """ML model definitions."""
 
+import os
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')  # Reduce TF logging
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '-1')  # Disable GPU to avoid CUDA warnings
+
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict, Tuple
@@ -48,9 +52,13 @@ class MLModel(ABC):
         }
         
         if self.model_type == 'neural_network':
-            self.model.save(filepath + '.h5')
+            # Use modern Keras format
+            self.model.save(filepath + '.keras')
         else:
             model_data['model'] = self.model
+            # Persist fitted model for ARIMA
+            if self.model_type == 'arima':
+                model_data['fitted_model'] = getattr(self, 'fitted_model', None)
         
         with open(filepath + '.pkl', 'wb') as f:
             pickle.dump(model_data, f)
@@ -65,9 +73,17 @@ class MLModel(ABC):
         self.scaler = model_data['scaler']
         
         if self.model_type == 'neural_network':
-            self.model = keras.models.load_model(filepath + '.h5')
+            # Load modern Keras format if available, fallback to legacy
+            try:
+                self.model = keras.models.load_model(filepath + '.keras')
+            except Exception:
+                self.model = keras.models.load_model(filepath + '.h5')
         else:
-            self.model = model_data['model']
+            self.model = model_data.get('model')
+            if self.model_type == 'arima':
+                self.fitted_model = model_data.get('fitted_model')
+                # If fitted_model restored, ensure trained flag is consistent
+                self.is_trained = self.is_trained and (self.fitted_model is not None)
 
 
 class LinearRegressionModel(MLModel):

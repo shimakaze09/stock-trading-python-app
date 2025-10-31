@@ -65,6 +65,15 @@ class FundamentalFetcher:
     
     def _process_financial_data(self, stock_id: int, financial: Dict, period: str):
         """Process and store financial data."""
+        def _num(value):
+            try:
+                if isinstance(value, dict):
+                    value = value.get('value', None)
+                if value is None:
+                    return None
+                return float(value)
+            except Exception:
+                return None
         fiscal_year = financial.get('fiscal_year')
         fiscal_quarter = financial.get('fiscal_period') if period == "quarterly" else None
         
@@ -107,15 +116,15 @@ class FundamentalFetcher:
             # Valuation metrics (may be limited in free tier)
             valuations = financial.get('valuations', {})
             if valuations:
-                payload['market_cap'] = valuations.get('market_capitalization')
-                payload['pe_ratio'] = valuations.get('price_to_earnings_ratio')
-                payload['pb_ratio'] = valuations.get('price_to_book_ratio')
-                payload['ev_ebitda'] = valuations.get('enterprise_value_to_ebitda')
+                payload['market_cap'] = _num(valuations.get('market_capitalization'))
+                payload['pe_ratio'] = _num(valuations.get('price_to_earnings_ratio'))
+                payload['pb_ratio'] = _num(valuations.get('price_to_book_ratio'))
+                payload['ev_ebitda'] = _num(valuations.get('enterprise_value_to_ebitda'))
             
             # Revenue and earnings
             if income_statement:
-                payload['revenue'] = income_statement.get('revenues')
-                payload['earnings'] = income_statement.get('net_income_loss')
+                payload['revenue'] = _num(income_statement.get('revenues'))
+                payload['earnings'] = _num(income_statement.get('net_income_loss'))
                 if payload['revenue'] and payload['earnings']:
                     payload['profit_margin'] = (
                         float(payload['earnings']) / 
@@ -124,18 +133,18 @@ class FundamentalFetcher:
             
             # Balance sheet items
             if balance_sheet:
-                payload['assets'] = balance_sheet.get('assets')
-                payload['liabilities'] = balance_sheet.get('liabilities')
-                payload['equity'] = balance_sheet.get('equity')
-                payload['cash'] = balance_sheet.get('cash_and_cash_equivalents_at_carrying_value')
+                payload['assets'] = _num(balance_sheet.get('assets'))
+                payload['liabilities'] = _num(balance_sheet.get('liabilities'))
+                payload['equity'] = _num(balance_sheet.get('equity'))
+                payload['cash'] = _num(balance_sheet.get('cash_and_cash_equivalents_at_carrying_value'))
                 # Debt should reflect interest-bearing debt, not total liabilities
                 long_term_debt = (
-                    balance_sheet.get('long_term_debt_noncurrent') or
-                    balance_sheet.get('long_term_debt_and_capital_lease_obligations')
+                    _num(balance_sheet.get('long_term_debt_noncurrent')) or
+                    _num(balance_sheet.get('long_term_debt_and_capital_lease_obligations'))
                 )
                 current_debt = (
-                    balance_sheet.get('long_term_debt_current') or
-                    balance_sheet.get('short_term_borrowings')
+                    _num(balance_sheet.get('long_term_debt_current')) or
+                    _num(balance_sheet.get('short_term_borrowings'))
                 )
                 if long_term_debt is not None or current_debt is not None:
                     try:
