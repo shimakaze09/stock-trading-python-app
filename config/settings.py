@@ -32,8 +32,11 @@ class Settings:
     MAX_API_CALLS_PER_MINUTE: int = int(os.getenv('MAX_API_CALLS_PER_MINUTE', '5'))
     BATCH_SIZE: int = int(os.getenv('BATCH_SIZE', '100'))
     
-    # Rate limiting
-    API_CALL_INTERVAL_SECONDS: float = 60.0 / MAX_API_CALLS_PER_MINUTE if MAX_API_CALLS_PER_MINUTE > 0 else 12.0
+    # Rate limiting - compute dynamically to avoid NameError during class definition
+    @property
+    def API_CALL_INTERVAL_SECONDS(self) -> float:
+        value = 60.0 / self.MAX_API_CALLS_PER_MINUTE if self.MAX_API_CALLS_PER_MINUTE > 0 else 12.0
+        return float(value)
     
     # Analysis Configuration
     TECHNICAL_INDICATORS: bool = os.getenv('TECHNICAL_INDICATORS', 'true').lower() == 'true'

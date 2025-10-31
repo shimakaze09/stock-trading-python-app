@@ -165,6 +165,7 @@ class ReportGenerator:
             'atr': float(indicators.atr) if indicators.atr else None,
             'support_level': float(indicators.support_level) if indicators.support_level else None,
             'resistance_level': float(indicators.resistance_level) if indicators.resistance_level else None,
+            'current_price': float(current_price) if current_price is not None else None,
             'price_vs_sma20': (current_price / float(indicators.sma_20) - 1) * 100 if indicators.sma_20 else None,
             'price_vs_sma50': (current_price / float(indicators.sma_50) - 1) * 100 if indicators.sma_50 else None,
             'price_vs_sma200': (current_price / float(indicators.sma_200) - 1) * 100 if indicators.sma_200 else None,

@@ -50,8 +50,10 @@ class IndicatorCalculator:
         """Stochastic Oscillator."""
         lowest_low = low.rolling(window=period).min()
         highest_high = high.rolling(window=period).max()
-        
-        k_percent = 100 * ((close - lowest_low) / (highest_high - lowest_low))
+        denom = (highest_high - lowest_low)
+        # Avoid division by zero: where denom == 0, result is NaN
+        k_raw = (close - lowest_low) / denom.replace(0, pd.NA)
+        k_percent = 100 * k_raw
         d_percent = k_percent.rolling(window=smooth).mean()
         
         return {
@@ -64,8 +66,10 @@ class IndicatorCalculator:
         """Williams %R."""
         highest_high = high.rolling(window=period).max()
         lowest_low = low.rolling(window=period).min()
-        
-        wr = -100 * ((highest_high - close) / (highest_high - lowest_low))
+        denom = (highest_high - lowest_low)
+        # Avoid division by zero: where denom == 0, result is NaN
+        wr_raw = (highest_high - close) / denom.replace(0, pd.NA)
+        wr = -100 * wr_raw
         
         return wr
     
