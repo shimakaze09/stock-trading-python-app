@@ -135,7 +135,6 @@ class PolygonClient:
             to_date = datetime.now().strftime('%Y-%m-%d')
         
         params = {
-            'ticker': symbol.upper(),
             'multiplier': multiplier,
             'timespan': timespan,
             'from': from_date,

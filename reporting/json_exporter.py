@@ -177,8 +177,8 @@ class JSONExporter:
                 # Prediction targets
                 predictions = report.get('predictions', {})
                 if predictions:
-                    targets['predicted_change'] = predictions.get('overall_predicted_change'),
-                    targets['predicted_direction'] = predictions.get('overall_direction'),
+                    targets['predicted_change'] = predictions.get('overall_predicted_change')
+                    targets['predicted_direction'] = predictions.get('overall_direction')
                     targets['prediction_confidence'] = predictions.get('overall_confidence')
                 
                 sample['targets'] = targets
