@@ -177,6 +177,26 @@ CREATE INDEX IF NOT EXISTS idx_analysis_reports_stock_id ON analysis_reports(sto
 CREATE INDEX IF NOT EXISTS idx_analysis_reports_date ON analysis_reports(report_date);
 CREATE INDEX IF NOT EXISTS idx_analysis_reports_stock_date ON analysis_reports(stock_id, report_date DESC);
 
+-- Ingestion state for adaptive scheduling
+CREATE TABLE IF NOT EXISTS ingestion_state (
+    id SERIAL PRIMARY KEY,
+    stock_id INTEGER REFERENCES stocks(id) ON DELETE CASCADE UNIQUE,
+    last_price_update TIMESTAMP,
+    last_fundamental_update TIMESTAMP,
+    last_prediction TIMESTAMP,
+    success_streak INTEGER DEFAULT 0,
+    failure_streak INTEGER DEFAULT 0,
+    priority_score DECIMAL(10,4) DEFAULT 0,
+    avg_runtime_ms INTEGER,
+    last_run_at TIMESTAMP,
+    next_run_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_state_next_run ON ingestion_state(next_run_at);
+CREATE INDEX IF NOT EXISTS idx_ingestion_state_priority ON ingestion_state(priority_score DESC);
+
 -- Update timestamp function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

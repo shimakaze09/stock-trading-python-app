@@ -31,6 +31,11 @@ class Settings:
     UPDATE_INTERVAL_MINUTES: int = int(os.getenv('UPDATE_INTERVAL_MINUTES', '30'))
     MAX_API_CALLS_PER_MINUTE: int = int(os.getenv('MAX_API_CALLS_PER_MINUTE', '5'))
     BATCH_SIZE: int = int(os.getenv('BATCH_SIZE', '100'))
+    MAX_SYMBOLS_PER_RUN: int = int(os.getenv('MAX_SYMBOLS_PER_RUN', '300'))
+    COVERAGE_WINDOW_DAYS: int = int(os.getenv('COVERAGE_WINDOW_DAYS', '7'))
+    MIN_REVISIT_DAYS: int = int(os.getenv('MIN_REVISIT_DAYS', '1'))
+    MAX_REVISIT_DAYS: int = int(os.getenv('MAX_REVISIT_DAYS', '14'))
+    EXPLORATION_RATE: float = float(os.getenv('EXPLORATION_RATE', '0.05'))
     
     # Rate limiting - compute dynamically to avoid NameError during class definition
     @property

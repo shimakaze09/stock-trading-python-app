@@ -278,3 +278,24 @@ class AnalysisReport(Base):
         """Get prediction data as dictionary."""
         return self.prediction_data or {}
 
+
+class IngestionState(Base):
+    """Tracks per-symbol ingestion metrics for adaptive scheduling."""
+    __tablename__ = 'ingestion_state'
+
+    id = Column(Integer, primary_key=True)
+    stock_id = Column(Integer, ForeignKey('stocks.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
+    last_price_update = Column(DateTime)
+    last_fundamental_update = Column(DateTime)
+    last_prediction = Column(DateTime)
+    success_streak = Column(Integer, default=0)
+    failure_streak = Column(Integer, default=0)
+    priority_score = Column(Numeric(10, 4), default=0)
+    avg_runtime_ms = Column(Integer)
+    last_run_at = Column(DateTime)
+    next_run_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    stock = relationship('Stock')
+
