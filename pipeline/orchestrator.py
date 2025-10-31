@@ -15,6 +15,7 @@ from reporting.report_generator import ReportGenerator
 from reporting.json_exporter import JSONExporter
 from reporting.cli_formatter import CLIFormatter
 from config import get_settings
+from .prioritizer import SymbolPrioritizer
 
 
 class PipelineOrchestrator:
@@ -71,10 +72,11 @@ class PipelineOrchestrator:
             stocks = [self.db.query(Stock).filter(Stock.symbol == s.upper()).first() for s in symbols]
             stocks = [s for s in stocks if s]
         else:
-            query = self.db.query(Stock).filter(Stock.active == True)
+            # Adaptive selection
+            prioritizer = SymbolPrioritizer(self.db)
+            stocks = prioritizer.get_symbols_for_run()
             if limit:
-                query = query.limit(limit)
-            stocks = query.all()
+                stocks = stocks[:limit]
         
         if not stocks:
             print("No stocks found to process.")
@@ -90,6 +92,7 @@ class PipelineOrchestrator:
             print(f"\n[{i}/{len(stocks)}] Processing {symbol}...")
             
             try:
+                start_ts = datetime.utcnow()
                 result = self._process_stock(
                     symbol,
                     fetch_data=fetch_data,
@@ -103,6 +106,12 @@ class PipelineOrchestrator:
                 )
                 
                 results[symbol] = result
+                # Update ingestion state metrics
+                price_updated = (result.get('price_records_fetched') or 0) > 0
+                fundamentals_updated = result.get('fundamental_data_fetched') is True
+                ok = result.get('success', False)
+                runtime_ms = int((datetime.utcnow() - start_ts).total_seconds() * 1000)
+                SymbolPrioritizer(self.db).update_state(stock.id, ok, price_updated, fundamentals_updated, runtime_ms)
                 
                 # Collect reports for batch export
                 if generate_reports and result.get('report'):

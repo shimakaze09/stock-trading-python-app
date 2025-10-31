@@ -5,6 +5,7 @@ from sqlalchemy import (
     Date, DateTime, ForeignKey, UniqueConstraint, Index, Text
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -277,4 +278,43 @@ class AnalysisReport(Base):
     def get_prediction_data(self) -> dict:
         """Get prediction data as dictionary."""
         return self.prediction_data or {}
+
+
+class IngestionState(Base):
+    """Tracks per-symbol ingestion metrics for adaptive scheduling."""
+    __tablename__ = 'ingestion_state'
+
+    id = Column(Integer, primary_key=True)
+    stock_id = Column(Integer, ForeignKey('stocks.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
+    last_price_update = Column(DateTime)
+    last_fundamental_update = Column(DateTime)
+    last_prediction = Column(DateTime)
+    success_streak = Column(Integer, default=0)
+    failure_streak = Column(Integer, default=0)
+    priority_score = Column(Numeric(10, 4), default=0)
+    avg_runtime_ms = Column(Integer)
+    last_run_at = Column(DateTime)
+    next_run_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    stock = relationship('Stock')
+
+
+class ModelRegistry(Base):
+    """Persist trained model binaries in Postgres."""
+    __tablename__ = 'model_registry'
+
+    id = Column(Integer, primary_key=True)
+    stock_id = Column(Integer, ForeignKey('stocks.id', ondelete='CASCADE'), nullable=False, index=True)
+    model_type = Column(String(50), nullable=False)
+    prediction_horizon = Column(Integer, nullable=False)
+    model_version = Column(String(50))
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    pkl_data = Column(LargeBinary)
+    keras_data = Column(LargeBinary)
+
+    __table_args__ = (
+        UniqueConstraint('stock_id', 'model_type', 'prediction_horizon', name='uq_model_registry_key'),
+    )
 

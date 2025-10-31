@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from database.models import Stock, Prediction
 from .models import MLModel, LinearRegressionModel, ARIMAModel, NeuralNetworkModel
 from .features import FeatureEngineer
+from .registry import save_model_binary
 from config import get_settings
 
 
@@ -131,6 +132,10 @@ class ModelTrainer:
                 model_dir = f'models/{symbol}'
                 model_path = f'{model_dir}/{model_type}_{horizon}d'
                 model.save(model_path)
+                # Persist binary in DB for cross-run restore
+                pkl_path = model_path + '.pkl' if model_type != 'neural_network' else None
+                keras_path = model_path + '.keras' if model_type == 'neural_network' else None
+                save_model_binary(self.db, symbol, model_type, horizon, '1.0', pkl_path, keras_path)
                 
                 results[f'{horizon}d'] = {
                     'train_metrics': train_metrics,

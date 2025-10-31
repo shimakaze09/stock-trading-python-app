@@ -21,16 +21,25 @@ class Settings:
     DB_NAME: str = os.getenv('DB_NAME', 'stockdb')
     DB_HOST: str = os.getenv('DB_HOST', 'localhost')
     DB_PORT: int = int(os.getenv('DB_PORT', '5432'))
+    DB_SSLMODE: str = os.getenv('DB_SSLMODE', '')  # e.g., 'require' for Supabase
     
     @property
     def DATABASE_URL(self) -> str:
         """Get SQLAlchemy database URL."""
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        base = f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        if self.DB_SSLMODE:
+            return f"{base}?sslmode={self.DB_SSLMODE}"
+        return base
     
     # Pipeline Configuration
     UPDATE_INTERVAL_MINUTES: int = int(os.getenv('UPDATE_INTERVAL_MINUTES', '30'))
     MAX_API_CALLS_PER_MINUTE: int = int(os.getenv('MAX_API_CALLS_PER_MINUTE', '5'))
     BATCH_SIZE: int = int(os.getenv('BATCH_SIZE', '100'))
+    MAX_SYMBOLS_PER_RUN: int = int(os.getenv('MAX_SYMBOLS_PER_RUN', '300'))
+    COVERAGE_WINDOW_DAYS: int = int(os.getenv('COVERAGE_WINDOW_DAYS', '7'))
+    MIN_REVISIT_DAYS: int = int(os.getenv('MIN_REVISIT_DAYS', '1'))
+    MAX_REVISIT_DAYS: int = int(os.getenv('MAX_REVISIT_DAYS', '14'))
+    EXPLORATION_RATE: float = float(os.getenv('EXPLORATION_RATE', '0.05'))
     
     # Rate limiting - compute dynamically to avoid NameError during class definition
     @property
