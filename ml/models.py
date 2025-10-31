@@ -125,6 +125,7 @@ class ARIMAModel(MLModel):
         super().__init__('arima')
         self.order = order
         self.model = None
+        self.fitted_model = None
     
     def train(self, X: np.ndarray, y: np.ndarray) -> Dict:
         """Train the ARIMA model."""
@@ -135,16 +136,16 @@ class ARIMAModel(MLModel):
         
         try:
             self.model = ARIMA(y, order=self.order)
-            fitted_model = self.model.fit()
+            self.fitted_model = self.model.fit()
             self.is_trained = True
             
             # Get fitted values
-            fitted_values = fitted_model.fittedvalues
+            fitted_values = self.fitted_model.fittedvalues
             
             # Calculate metrics
             mse = np.mean((y - fitted_values) ** 2)
             mae = np.mean(np.abs(y - fitted_values))
-            aic = fitted_model.aic
+            aic = self.fitted_model.aic
             
             return {
                 'mse': float(mse),
@@ -157,15 +158,12 @@ class ARIMAModel(MLModel):
     
     def predict(self, X: np.ndarray, steps: int = 1) -> np.ndarray:
         """Make predictions."""
-        if not self.is_trained or self.model is None:
+        if not self.is_trained or self.fitted_model is None:
             raise ValueError("Model must be trained before prediction")
         
         try:
-            # Get fitted model
-            fitted_model = self.model.fit()
-            
-            # Forecast
-            forecast = fitted_model.forecast(steps=steps)
+            # Forecast from the trained/fitted model without refitting
+            forecast = self.fitted_model.forecast(steps=steps)
             
             return forecast
         except Exception as e:

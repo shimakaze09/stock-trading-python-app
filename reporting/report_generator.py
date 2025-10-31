@@ -479,9 +479,9 @@ class ReportGenerator:
             'fundamental_summary': summaries.get('fundamental'),
             'prediction_summary': summaries.get('prediction'),
             'overall_summary': summaries.get('overall'),
-            'technical_data': json.dumps(report.get('technical_analysis', {})),
-            'fundamental_data': json.dumps(report.get('fundamental_analysis', {})),
-            'prediction_data': json.dumps(report.get('predictions', {})),
+            'technical_data': report.get('technical_analysis', {}),
+            'fundamental_data': report.get('fundamental_analysis', {}),
+            'prediction_data': report.get('predictions', {}),
         }
 
         stmt = (

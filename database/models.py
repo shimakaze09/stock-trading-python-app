@@ -2,8 +2,9 @@
 
 from sqlalchemy import (
     Column, Integer, String, Numeric, BigInteger, Boolean,
-    Date, DateTime, Text, ForeignKey, UniqueConstraint, Index
+    Date, DateTime, ForeignKey, UniqueConstraint, Index, Text
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -189,7 +190,7 @@ class Prediction(Base):
     predicted_direction = Column(String(10))  # 'bullish', 'bearish', 'neutral'
     confidence_score = Column(Numeric(5, 2))  # 0-100
     model_version = Column(String(50))
-    features = Column(Text)  # JSON string
+    features = Column(JSONB)  # JSONB data
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -201,14 +202,12 @@ class Prediction(Base):
     stock = relationship('Stock', back_populates='predictions')
     
     def set_features(self, features_dict: dict):
-        """Set features as JSON string."""
-        self.features = json.dumps(features_dict)
+        """Set features as JSON object."""
+        self.features = features_dict
     
     def get_features(self) -> dict:
         """Get features as dictionary."""
-        if self.features:
-            return json.loads(self.features)
-        return {}
+        return self.features or {}
 
 
 class AnalysisReport(Base):
@@ -241,9 +240,9 @@ class AnalysisReport(Base):
     overall_summary = Column(Text)
     
     # Raw data (JSON)
-    technical_data = Column(Text)  # JSON string
-    fundamental_data = Column(Text)  # JSON string
-    prediction_data = Column(Text)  # JSON string
+    technical_data = Column(JSONB)  # JSONB data
+    fundamental_data = Column(JSONB)  # JSONB data
+    prediction_data = Column(JSONB)  # JSONB data
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -256,32 +255,26 @@ class AnalysisReport(Base):
     stock = relationship('Stock', back_populates='analysis_reports')
     
     def set_technical_data(self, data: dict):
-        """Set technical data as JSON string."""
-        self.technical_data = json.dumps(data)
+        """Set technical data as JSON object."""
+        self.technical_data = data
     
     def set_fundamental_data(self, data: dict):
-        """Set fundamental data as JSON string."""
-        self.fundamental_data = json.dumps(data)
+        """Set fundamental data as JSON object."""
+        self.fundamental_data = data
     
     def set_prediction_data(self, data: dict):
-        """Set prediction data as JSON string."""
-        self.prediction_data = json.dumps(data)
+        """Set prediction data as JSON object."""
+        self.prediction_data = data
     
     def get_technical_data(self) -> dict:
         """Get technical data as dictionary."""
-        if self.technical_data:
-            return json.loads(self.technical_data)
-        return {}
+        return self.technical_data or {}
     
     def get_fundamental_data(self) -> dict:
         """Get fundamental data as dictionary."""
-        if self.fundamental_data:
-            return json.loads(self.fundamental_data)
-        return {}
+        return self.fundamental_data or {}
     
     def get_prediction_data(self) -> dict:
         """Get prediction data as dictionary."""
-        if self.prediction_data:
-            return json.loads(self.prediction_data)
-        return {}
+        return self.prediction_data or {}
 
