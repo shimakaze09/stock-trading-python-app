@@ -74,6 +74,12 @@ class FundamentalFetcher:
                 return float(value)
             except Exception:
                 return None
+
+        def _first_non_none(*values):
+            for v in values:
+                if v is not None:
+                    return v
+            return None
         fiscal_year = financial.get('fiscal_year')
         fiscal_quarter = financial.get('fiscal_period') if period == "quarterly" else None
         
@@ -138,18 +144,18 @@ class FundamentalFetcher:
                 payload['equity'] = _num(balance_sheet.get('equity'))
                 payload['cash'] = _num(balance_sheet.get('cash_and_cash_equivalents_at_carrying_value'))
                 # Debt should reflect interest-bearing debt, not total liabilities
-                long_term_debt = (
-                    _num(balance_sheet.get('long_term_debt_noncurrent')) or
+                long_term_debt = _first_non_none(
+                    _num(balance_sheet.get('long_term_debt_noncurrent')),
                     _num(balance_sheet.get('long_term_debt_and_capital_lease_obligations'))
                 )
-                current_debt = (
-                    _num(balance_sheet.get('long_term_debt_current')) or
+                current_debt = _first_non_none(
+                    _num(balance_sheet.get('long_term_debt_current')),
                     _num(balance_sheet.get('short_term_borrowings'))
                 )
                 if long_term_debt is not None or current_debt is not None:
                     try:
-                        ltd = float(long_term_debt or 0)
-                        cd = float(current_debt or 0)
+                        ltd = float(0 if long_term_debt is None else long_term_debt)
+                        cd = float(0 if current_debt is None else current_debt)
                         payload['debt'] = ltd + cd
                     except Exception:
                         payload['debt'] = None
