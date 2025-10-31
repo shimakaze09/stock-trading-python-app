@@ -2,12 +2,10 @@ name: Stock Analysis Pipeline
 
 on:
   schedule:
-    # Run every 30 minutes
     - cron: '*/30 * * * *'
-    # Also run at market open and close (EST)
-    - cron: '30 9 * * 1-5'   # 9:30 AM EST (market open)
-    - cron: '0 16 * * 1-5'    # 4:00 PM EST (market close)
-  workflow_dispatch:  # Allow manual triggering
+    - cron: '30 9 * * 1-5'
+    - cron: '0 16 * * 1-5'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -39,7 +37,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -d ${{ secrets.DB_NAME }} -U ${{ secrets.DB_USER }}" 
+          --health-cmd "pg_isready -d $POSTGRES_DB -U $POSTGRES_USER"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -88,7 +86,7 @@ jobs:
 
       - name: Run pipeline
         run: |
-          python -m scripts.run_pipeline 100  # Process 100 stocks per run
+          python -m scripts.run_pipeline 100
 
       - name: Upload exports
         if: always()
