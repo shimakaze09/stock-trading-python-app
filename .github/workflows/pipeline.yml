@@ -17,9 +17,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: stockuser
-          POSTGRES_PASSWORD: stockpass
-          POSTGRES_DB: stockdb
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
         ports:
           - 5432:5432
         options: >-
@@ -43,9 +43,9 @@ jobs:
       
       - name: Initialize database
         env:
-          DB_USER: stockuser
-          DB_PASSWORD: stockpass
-          DB_NAME: stockdb
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_HOST: localhost
           DB_PORT: 5432
         run: |
@@ -54,9 +54,9 @@ jobs:
       - name: Seed stocks (if needed)
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-          DB_USER: stockuser
-          DB_PASSWORD: stockpass
-          DB_NAME: stockdb
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_HOST: localhost
           DB_PORT: 5432
         run: |
@@ -66,9 +66,9 @@ jobs:
       - name: Run pipeline
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-          DB_USER: stockuser
-          DB_PASSWORD: stockpass
-          DB_NAME: stockdb
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_HOST: localhost
           DB_PORT: 5432
         run: |
@@ -81,4 +81,3 @@ jobs:
           name: analysis-exports
           path: exports/
           retention-days: 7
-
