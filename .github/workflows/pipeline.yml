@@ -1,0 +1,84 @@
+name: Stock Analysis Pipeline
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+    # Also run at market open and close (EST)
+    - cron: '30 9 * * 1-5'   # 9:30 AM EST (market open)
+    - cron: '0 16 * * 1-5'    # 4:00 PM EST (market close)
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: stockuser
+          POSTGRES_PASSWORD: stockpass
+          POSTGRES_DB: stockdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Initialize database
+        env:
+          DB_USER: stockuser
+          DB_PASSWORD: stockpass
+          DB_NAME: stockdb
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: |
+          python scripts/init_db.py
+      
+      - name: Seed stocks (if needed)
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          DB_USER: stockuser
+          DB_PASSWORD: stockpass
+          DB_NAME: stockdb
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: |
+          python scripts/seed_stocks.py || echo "Stocks may already be seeded"
+        continue-on-error: true
+      
+      - name: Run pipeline
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          DB_USER: stockuser
+          DB_PASSWORD: stockpass
+          DB_NAME: stockdb
+          DB_HOST: localhost
+          DB_PORT: 5432
+        run: |
+          python scripts/run_pipeline.py 100  # Process 100 stocks per run
+      
+      - name: Upload exports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: analysis-exports
+          path: exports/
+          retention-days: 7
+
